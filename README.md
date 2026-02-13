@@ -1,92 +1,90 @@
-# 433 MHz LDR Tetikli Lazer Alarm
+# 433 MHz LDR-Triggered Laser Alarm
 
-Basit ve güvenilir bir lazer/beam alarm projesi. LDR ile ışık kesilmelerini algılar, 433 MHz alıcı ile iki uzaktan komut (MUTE / RESET) dinler ve buzzer + LED ile uyarı verir. Alarm bir kez tetiklendiğinde (latch) LDR geri normale dönse bile kapanmaz — yalnızca **RESET** komutu ile sıfırlanır. **MUTE** komutu ise sistemi tamamen susturur ve yeni tetiklemeleri engeller.
-
----
-
-## Özellikler
-- LDR (A0) ile ışık kesilmesini algılama ve latch (kilitleme) mantığı  
-- 433 MHz uzaktan kumanda ile iki komut:
-  - **MUTE** → RF kodu: `4544259` — sistemi susturur, yeni tetiklemeleri engeller  
-  - **RESET** → RF kodu: `4544268` — mute kaldırılır, alarm sıfırlanır  
-- Buzzer ve LED ile sesli/görsel alarm  
-- Non-blocking (Arduino donmaz) alarm döngüsü  
-- Kolay genişletilebilir yapı (EEPROM, LCD, GSM bildirim vb. eklenebilir)
+A simple and reliable laser/beam alarm project. It detects beam interruptions using an LDR, listens for two remote commands (MUTE / RESET) via a 433 MHz receiver, and alerts with a buzzer + LED. Once the alarm is triggered (latched), it will not turn off even if the LDR returns to normal — it can only be cleared with the **RESET** command. The **MUTE** command fully silences the system and prevents new triggers.
 
 ---
 
-## Donanım
-- Arduino Pro Mini / Nano / Uno vb.  
-- 433 MHz alıcı modülü (DATA pini: **D2**)  
-- Buzzer (pasif önerilir) — **D4**  
-- LED (ser direnç ile) — **D5**  
-- LDR (foto direnç) — **A0** (voltage divider gerektirir)  
-- 10kΩ sabit direnç (LDR ile voltage divider için)  
-- Anten (10–17 cm tel) — RF alma performansını arttırır
+## Features
+- Detects beam interruption via LDR (A0) with latch logic  
+- Two commands via 433 MHz remote:
+  - **MUTE** → RF code: `4544259` — silences the system, prevents new triggers  
+  - **RESET** → RF code: `4544268` — clears mute, resets the alarm  
+- Audible/visual alarm via buzzer and LED  
+- Non-blocking alarm loop (Arduino does not freeze)  
+- Easy to extend (EEPROM, LCD, GSM notifications, etc.)
 
 ---
 
-## Pinler (varsayılan)
-- `D2` — 433 MHz RX DATA (interrupt destekli pin)  
+## Hardware
+- Arduino Pro Mini / Nano / Uno, etc.  
+- 433 MHz receiver module (DATA pin: **D2**)  
+- Buzzer (passive recommended) — **D4**  
+- LED (with series resistor) — **D5**  
+- LDR (photoresistor) — **A0** (requires a voltage divider)  
+- Fixed 10kΩ resistor (for the LDR voltage divider)  
+- Antenna (10–17 cm wire) — improves RF reception
+
+---
+
+## Pins (default)
+- `D2` — 433 MHz RX DATA (interrupt-capable pin)  
 - `D4` — Buzzer  
 - `D5` — LED  
-- `A0` — LDR analog giriş
+- `A0` — LDR analog input
 
-Bu pinler istenirse projede kolayca değiştirilebilir; README’de ve projede kullanılan sabitlere dikkat et.
+You can change these pins easily in the project; just keep the README and the constants in sync.
 
 ---
 
-## Devre (özet)
+## Wiring (summary)
 - 433 MHz RX: VCC — 5V, GND — GND, DATA — D2  
-- Buzzer: + → D4, − → GND (aktif/pasif buzzer farkına dikkat)  
+- Buzzer: + → D4, − → GND (note active vs passive buzzer differences)  
 - LED: D5 → 220Ω → LED → GND  
-- LDR: 5V — LDR — A0 — Rfixed — GND (Rfixed ~10kΩ başlangıç için)
+- LDR: 5V — LDR — A0 — Rfixed — GND (Rfixed ~10kΩ as a starting point)
 
 ---
 
-## Davranış / Kullanım
-- Başlangıç: sistem **ARMED** durumunda (mute kapalı, alarm sıfır).  
-- Eğer LDR değeri `650` eşik değerinin **altına** düşerse, alarm **kilitlenir** (latch) ve LED + buzzer çalışmaya başlar. LDR normale dönse bile alarm kapanmaz.  
-- Uzaktan kumanda ile:
-  - `4544259` gönderilirse → **MUTE**: sistem susturulur, alarm durdurulur ve yeni tetiklemeler engellenir.  
-  - `4544268` gönderilirse → **RESET**: mute kaldırılır, alarm sıfırlanır, sistem başlangıç durumuna döner.  
-- Sistem, alarm latched olduğu sürece sadece **RESET** ile sıfırlanır; MUTE alarmı durdurur ve yeni tetiklemeyi engeller.
+## Behavior / Usage
+- Startup: system is **ARMED** (mute off, alarm reset).  
+- If the LDR reading drops **below** the threshold `650`, the alarm **latches** and the LED + buzzer start. Even if the LDR returns to normal, the alarm stays on.  
+- Remote commands:
+  - Send `4544259` → **MUTE**: silences the system, stops the alarm, and blocks new triggers.  
+  - Send `4544268` → **RESET**: clears mute, resets the alarm, and returns to the initial state.  
+- While the alarm is latched, only **RESET** fully clears it; **MUTE** stops the alarm and prevents re-triggering.
 
 ---
 
-## Ayarlar / Test
-- **LDR eşiği**: `650` başlangıç değeri olarak önerilmiştir. Ortam ışığına göre test edip ayarlayın (ör. 600–800 arası deneyin).  
-- **RF kod doğrulama**: Kumandanızın gerçek gönderdiği değeri seri monitörden kontrol edin; farklı kumandalar farklı kod/protokol gönderebilir. Gerekirse RF kodlarını güncelleyin.  
-- **Buzzer tipi**: Pasif buzzer için `tone()` uygundur; aktif buzzer kullanıyorsanız `HIGH/LOW` ile sürün.
+## Settings / Testing
+- **LDR threshold**: `650` is suggested as a starting value. Test and tune for your ambient light (try ~600–800).  
+- **RF code verification**: Check the actual received value in the Serial Monitor; different remotes may send different codes/protocols. Update the RF codes if needed.  
+- **Buzzer type**: `tone()` works for a passive buzzer; for an active buzzer, drive it with `HIGH/LOW`.
 
 ---
 
-## Hata Giderme (Troubleshooting)
-- **RF kodları farklı çıkıyor**: Seri monitör ile gelen RF değerini okuyun; kumandanız farklı kod gönderiyorsa verilen MUTE/RESET kodlarını güncelleyin.  
-- **LDR tetikleme hassasiyeti**: Eşik değeri ortam ışığına göre ayarlanmalı. Voltage divider (LDR + sabit direnç) doğru bağlandığından emin olun.  
-- **Alıcı çalışmıyor**: Anten bağlı mı? VCC/GND doğru mu? DATA pini doğru yerde mi (interrupt destekli pin)?  
-- **Buzzer çalışmıyor**: Aktif vs pasif buzzer farkı ve sürme yöntemi kontrol edilmeli.  
-- **LED çok sönük**: Seri direnç ve bağlantı kontrolü yapılmalı.
+## Troubleshooting
+- **RF codes are different**: Read the incoming RF value via Serial Monitor and update the MUTE/RESET codes accordingly.  
+- **LDR trigger sensitivity**: The threshold must be tuned to the environment. Ensure the voltage divider (LDR + fixed resistor) is wired correctly.  
+- **Receiver not working**: Is the antenna connected? VCC/GND correct? DATA on the correct (interrupt-capable) pin?  
+- **Buzzer not working**: Verify active vs passive buzzer type and the correct drive method.  
+- **LED too dim**: Check the series resistor value and wiring.
 
 ---
 
-## Geliştirme fikirleri
-- Durum göstergesi için küçük bir OLED/LCD: `ARMED / MUTE / ALARM` gösterimi  
-- EEPROM ile `muted` ve `alarmLatched` durumlarının güç kesintisinde korunması  
-- Birden fazla LDR bölgesi ile bölge tabanlı alarm (bölgesel alarm tanımlama)  
-- SMS/Push/GSM/IoT bildirim entegrasyonu (alarm tetiklenince bildirim gönderme)  
-- Zamanlayıcı (gece modu / gündüz modu) ekleme
+## Improvement ideas
+- Small OLED/LCD for status: show `ARMED / MUTE / ALARM`  
+- Store `muted` and `alarmLatched` in EEPROM to survive power loss  
+- Multiple LDR zones for zone-based alarm logic  
+- SMS/Push/GSM/IoT notification integration (send a notification on trigger)  
+- Timer modes (night mode / day mode)
 
 ---
 
-## Güvenlik ve Etik
-- Bu cihaz deneyseldir; kritik güvenlik amaçlı kullanılmadan önce kapsamlı test yapın.  
-- Başkalarının cihazlarını izinsiz dinlemek veya kumanda sinyallerini yeniden göndermek etik ve/veya yasal sorunlar çıkarabilir — bulunduğunuz yerin yasalarına uyun.  
-- Lazer kullanımı veya doğrudan göze yönelik ışıklar tehlikelidir; göz güvenliğine dikkat edin.
+## Safety and Ethics
+- This device is experimental; test thoroughly before using it for any critical safety purpose.  
+- Listening to or retransmitting other people’s signals without permission can create ethical and/or legal issues — follow local laws.  
+- Lasers or direct eye exposure can be dangerous; take eye safety seriously.
 
 ---
 
-## Lisans
-MIT License — Bu projeyi kopyalayabilir, değiştirebilir ve dağıtabilirsiniz.
-
-
+## License
+MIT License — You may copy, modify, and distribute this project.
